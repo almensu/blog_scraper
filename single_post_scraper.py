@@ -11,8 +11,8 @@ class ArticleScraper:
         self.headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
-        self.articles_dir = Path("articles")
-        self.articles_dir.mkdir(exist_ok=True)
+        self.articles_dir = Path("articles") # 定义目录路径
+        self.articles_dir.mkdir(exist_ok=True) # 如果目录不存在就创建
     
     def scrape_article(self, url):
         try:
@@ -23,8 +23,8 @@ class ArticleScraper:
             
             # 提取文章信息
             title = tree.xpath("//h1/text()")[0].strip()
-            date = tree.xpath("//text()[contains(., 'Published on')]")[0]
-            date = date.replace("Published on ", "").strip()
+            date_value = tree.xpath("//time/@datetime")[0]
+            date = f"Published on {date_value}"
             
             # 提取文章内容
             paragraphs = tree.xpath("//article//p/text()")
