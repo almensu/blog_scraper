@@ -12,3 +12,8 @@ ENV/
 # Data files
 *.csv
 *.json
+
+# Articles
+articles/*
+!articles/.gitkeep
+
