@@ -4,7 +4,7 @@ import csv
 from datetime import datetime
 import time
 
-def scrape_blog(max_pages=5):
+def scrape_blog(max_pages=None):
     base_url = "https://baoyu.io/blog"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -18,7 +18,8 @@ def scrape_blog(max_pages=5):
     }
     
     for base_url, category in urls.items():
-        for page in range(1, max_pages + 1):
+        page = 1
+        while True:
             url = f"{base_url}?page={page}" if page > 1 else base_url
             
             try:
@@ -30,8 +31,8 @@ def scrape_blog(max_pages=5):
                 tree = html.fromstring(response.content)
                 
                 articles = tree.xpath("//article")
-                if not articles:
-                    print(f"No more articles found at {category} page {page}")
+                if not articles or (max_pages and page >= max_pages):
+                    print(f"Finished {category} at page {page}")
                     break
                     
                 for article in articles:
@@ -50,6 +51,8 @@ def scrape_blog(max_pages=5):
                             "category": category
                         })
                         
+                page += 1
+                
             except requests.exceptions.RequestException as e:
                 print(f"Error fetching {category} page {page}: {e}")
                 break
@@ -63,4 +66,5 @@ def scrape_blog(max_pages=5):
     print(f"Successfully scraped {len(all_articles)} articles to {filename}")
 
 if __name__ == "__main__":
-    scrape_blog(max_pages=3)  # 爬取3页
+    scrape_blog()
+    # scrape_blog(max_pages=3) 
