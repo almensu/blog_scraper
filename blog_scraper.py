@@ -12,44 +12,51 @@ def scrape_blog(max_pages=5):
     
     all_articles = []
     
-    for page in range(1, max_pages + 1):
-        url = f"{base_url}?page={page}" if page > 1 else base_url
-        
-        try:
-            time.sleep(1)
-            print(f"Scraping page {page}...")
+    urls = {
+        "https://baoyu.io/blog": "blog",
+        "https://baoyu.io/translations": "translations" 
+    }
+    
+    for base_url, category in urls.items():
+        for page in range(1, max_pages + 1):
+            url = f"{base_url}?page={page}" if page > 1 else base_url
             
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            tree = html.fromstring(response.content)
-            
-            articles = tree.xpath("//article")
-            if not articles:
-                print(f"No more articles found at page {page}")
+            try:
+                time.sleep(1)
+                print(f"Scraping {category} page {page}...")
+                
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+                tree = html.fromstring(response.content)
+                
+                articles = tree.xpath("//article")
+                if not articles:
+                    print(f"No more articles found at {category} page {page}")
+                    break
+                    
+                for article in articles:
+                    title = article.xpath(".//h2/text()")
+                    summary = article.xpath(".//p[1]/text()")
+                    date = article.xpath(".//p[2]/text()")
+                    href = article.xpath(".//a/@href")[0]
+                    url = f"https://baoyu.io/{href}" if href.startswith('blog/') else f"https://baoyu.io/blog/{href}"
+                    
+                    if title and summary and date:
+                        all_articles.append({
+                            "title": title[0].strip(),
+                            "summary": summary[0].strip(),
+                            "date": date[0].strip(),
+                            "url": url,
+                            "category": category
+                        })
+                        
+            except requests.exceptions.RequestException as e:
+                print(f"Error fetching {category} page {page}: {e}")
                 break
                 
-            for article in articles:
-                title = article.xpath(".//h2/text()")
-                summary = article.xpath(".//p[1]/text()")
-                date = article.xpath(".//p[2]/text()")
-                href = article.xpath(".//a/@href")[0]
-                url = f"https://baoyu.io/{href}" if href.startswith('blog/') else f"https://baoyu.io/blog/{href}"
-                
-                if title and summary and date:
-                    all_articles.append({
-                        "title": title[0].strip(),
-                        "summary": summary[0].strip(), 
-                        "date": date[0].strip(),
-                        "url": url
-                    })
-                    
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching page {page}: {e}")
-            break
-            
     filename = f"blog_posts_{datetime.now().strftime('%Y%m%d')}.csv"
     with open(filename, "w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["title", "summary", "date", "url"])
+        writer = csv.DictWriter(f, fieldnames=["title", "summary", "date", "url", "category"])
         writer.writeheader()
         writer.writerows(all_articles)
         
