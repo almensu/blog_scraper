@@ -8,3 +8,7 @@ venv/
 ENV/
 *.log
 .DS_Store 
+
+# Data files
+*.csv
+*.json
