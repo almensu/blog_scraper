@@ -40,7 +40,11 @@ def scrape_blog(max_pages=None):
                     summary = article.xpath(".//p[1]/text()")
                     date = article.xpath(".//p[2]/text()")
                     href = article.xpath(".//a/@href")[0]
-                    url = f"https://baoyu.io/{href}" if href.startswith('blog/') else f"https://baoyu.io/blog/{href}"
+                    # 只处理 blog/ 和 translations/ 开头的 URL
+                    if href.startswith('translations/'):
+                        url = f"https://baoyu.io/{href}"
+                    elif href.startswith('blog/'):
+                        url = f"https://baoyu.io/{href}"
                     
                     if title and summary and date:
                         all_articles.append({
