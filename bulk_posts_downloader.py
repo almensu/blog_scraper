@@ -2,6 +2,8 @@ import asyncio
 from playwright.async_api import async_playwright
 import random
 from typing import Optional
+import csv
+import time
 
 class BulkPostsDownloader:
     """
@@ -103,44 +105,48 @@ class BulkPostsDownloader:
         """
         try:
             await self.init_browser()
-            # 获取已下载的文章列表 / Get list of existing articles
-            existing_files = {f.stem for f in self.articles_dir.glob("*.md")}
             
+            # 读取 CSV 并保存到临时列表
+            rows = []
             with open(csv_file, 'r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
+                fieldnames = reader.fieldnames
+                if 'status' not in fieldnames:
+                    fieldnames = fieldnames + ['status']
                 rows = list(reader)
-                total = len(rows)
                 
-                print(f"Found {total} articles to process")
+            total = len(rows)
+            success = failed = skipped = 0
+            
+            # 处理文章
+            for i, row in enumerate(rows, 1):
+                if row.get('status') == 'completed':
+                    print(f"Skipping {i}/{total}: {row['title']} (already completed)")
+                    skipped += 1
+                    continue
+                    
+                try:
+                    print(f"\nProcessing {i}/{total}: {row['title']}")
+                    await self.scrape_article(row['url'])
+                    row['status'] = 'completed'  # 更新状态
+                    success += 1
+                    time.sleep(1)
+                except Exception as e:
+                    failed += 1
+                    row['status'] = 'failed'  # 标记失败
+                    print(f"Error downloading {row['url']}: {e}")
                 
-                for i, row in enumerate(rows, 1):
-                    # 随机延迟 2-5 秒
-                    delay = random.uniform(2, 5)
-                    time.sleep(delay)
+                # 实时更新 CSV
+                with open(csv_file, 'w', encoding='utf-8', newline='') as f:
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+                    writer.writerows(rows)
                     
-                    # 生成安全的文件名用于检查 / Generate safe filename for checking
-                    safe_title = "".join(c for c in row['title'][:20] if c.isalnum() or c in ('-', '_', '.'))
-                    
-                    # 如果文章已存在则跳过 / Skip if article already exists
-                    if safe_title in existing_files:
-                        print(f"Skipping {i}/{total}: {row['title']} (already exists)")
-                        skipped += 1
-                        continue
-                        
-                    try:
-                        print(f"\nProcessing {i}/{total}: {row['title']}")
-                        await self.scrape_article(row['url'])
-                        success += 1
-                        time.sleep(1)
-                    except Exception as e:
-                        failed += 1
-                        print(f"Error downloading {row['url']}: {e}")
-                        
-                print(f"\nDownload completed:")
-                print(f"Total: {total}")
-                print(f"Success: {success}")
-                print(f"Failed: {failed}")
-                print(f"Skipped: {skipped}")
+            print(f"\nDownload completed:")
+            print(f"Total: {total}")
+            print(f"Success: {success}")
+            print(f"Failed: {failed}")
+            print(f"Skipped: {skipped}")
         finally:
             await self.close_browser()
 
