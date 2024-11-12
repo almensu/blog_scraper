@@ -1,6 +1,6 @@
 # 🤖 Blog Post Scraper
 
-A comprehensive tool for scraping blog posts using multiple methods (Requests/BeautifulSoup and Playwright). Built for efficiency and ease of use! ✨
+A Python-based scraper specifically designed to extract blog posts from baoyu.io. Built for learning and practice purposes. ✨
 
 ## ✨ Features
 
@@ -32,8 +32,8 @@ A comprehensive tool for scraping blog posts using multiple methods (Requests/Be
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd blog-post-scraper
+git clone https://github.com/almensu/blog_scraper.git
+cd blog_scraper
 ```
 
 2. Install dependencies:
@@ -48,9 +48,14 @@ pip install -r requirements.txt
 python single_post_scraper.py --url <blog-post-url>
 ```
 
+### Scrape Data to CSV
+```bash
+python blog_scraper.py
+```
+
 ### 📚 Bulk Download
 ```bash
-python bulk_posts_downloader.py --input blog_posts_20241108.csv
+python bulk_posts_downloader.py --input <blog_posts_date>.csv
 ```
 
 ### 📸 Capture Screenshots
